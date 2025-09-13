@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>🔮 Ultimate Mystical Oracle 🔮</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
+
+html, body {
+  margin:0; padding:0;
+  height:100%;
+  font-family:'MedievalSharp', cursive;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background-size:cover; background-position:center;
+  color:white; text-shadow:0 0 12px black;
+  overflow:hidden; position:relative;
+  transition: background-image 2s ease-in-out;
+}
+
+h1 {
+  font-size:3em; margin-bottom:0.5em;
+  text-shadow: 0 0 20px #fff, 0 0 30px #ff00ff, 0 0 40px #00ffff;
+  animation: glowPulse 2s infinite alternate;
+}
+@keyframes glowPulse {
+  0%{ text-shadow:0 0 20px #fff,0 0 30px #ff00ff,0 0 40px #00ffff;}
+  100%{ text-shadow:0 0 25px #fff,0 0 40px #ff00ff,0 0 60px #00ffff;}
+}
+
+input, button {
+  font-size:1em; padding:0.5em 1em; margin:0.5em;
+  border-radius:10px; border:none; outline:none;
+}
+input { width:250px; }
+button {
+  cursor:pointer; background-color:rgba(68,68,68,0.8);
+  color:white; transition:0.3s; position:relative;
+}
+button:hover { background-color:rgba(255,255,255,0.2); transform:scale(1.08); box-shadow:0 0 20px #ff00ff,0 0 30px #00ffff; }
+
+#oracleText { margin-top:1em; font-size:1.5em; text-align:center; max-width:80%; min-height:4em; position:relative; z-index:2; }
+#history { margin-top:2em; font-size:0.9em; max-width:80%; text-align:left; z-index:2; }
+#history h2 { margin:0.5em 0; }
+
+.cursor { display:inline-block; width:2px; background:white; animation:blink 1s infinite; }
+@keyframes blink { 0%,50%{opacity:1} 51%,100%{opacity:0} }
+
+.sparkle, .dust, .star { position:absolute; width:5px; height:5px; border-radius:50%; pointer-events:none; opacity:0.8; animation:fadeOut 1s forwards; background: radial-gradient(circle, #fff 0%, #ff00ff 50%, #00ffff 100%); }
+@keyframes fadeOut { 0%{opacity:1} 100%{opacity:0; transform:translateY(-20px) rotate(15deg);} }
+
+#langSelector { position:absolute; top:10px; right:10px; z-index:3; }
+.flagBtn { cursor:pointer; margin-left:5px; width:30px; height:20px; border:1px solid #fff; border-radius:3px; }
+
+#discordLink { position:absolute; top:10px; left:10px; color:white; font-size:1.2em; text-decoration:none; display:flex; align-items:center; z-index:3; }
+#discordLink img { width:24px; height:24px; margin-right:5px; }
+
+#fogOverlay {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background:radial-gradient(rgba(255,255,255,0.01), rgba(0,0,0,0.5));
+  pointer-events:none; z-index:1;
+  animation: drift 60s linear infinite;
+}
+@keyframes drift {
+  0% { transform:translate(0,0); }
+  50% { transform:translate(50px,20px); }
+  100% { transform:translate(0,0); }
+}
+
+#lightBeams {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  pointer-events:none; z-index:0;
+}
+.beam {
+  position:absolute; width:2px; height:200%; background:rgba(255,255,255,0.05);
+  animation:beamMove linear infinite;
+}
+@keyframes beamMove { 0% { transform:translateY(-100%); } 100% { transform:translateY(100%); } }
+</style>
+</head>
+<body>
+
+<div id="discordLink">
+  <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/discord.svg" alt="Discord">
+  <span>Discord</span>
+</div>
+
+<div id="langSelector">
+  <img src="https://flagcdn.com/us.svg" class="flagBtn" data-lang="en" title="English">
+  <img src="https://flagcdn.com/es.svg" class="flagBtn" data-lang="es" title="Español">
+  <img src="https://flagcdn.com/fr.svg" class="flagBtn" data-lang="fr" title="Français">
+  <img src="https://flagcdn.com/de.svg" class="flagBtn" data-lang="de" title="Deutsch">
+  <img src="https://flagcdn.com/in.svg" class="flagBtn" data-lang="hi" title="हिन्दी">
+</div>
+
+<div id="fogOverlay"></div>
+<div id="lightBeams"></div>
+
+<h1 data-text="title">🔮 Ultimate Mystical Oracle 🔮</h1>
+<input type="text" id="question" placeholder="Ask your question..." data-text="placeholder"/>
+<button id="askBtn" data-text="button">Ask the Oracle</button>
+<div id="oracleText">Your answer will appear here...</div>
+<div id="history"><h2 data-text="history">Question History:</h2><ul id="histList"></ul></div>
+
+<audio id="magicSound" src="https://www.soundjay.com/misc/sounds/magic-chime-01.mp3"></audio>
+
+<script>
+// Discord
+const discordLink = document.getElementById('discordLink');
+discordLink.href = 'https://discord.gg/kVpFFvJdHu';
+discordLink.target = '_blank';
+
+// Particle optimization
+const maxParticles = 50;
+let particles = [];
+function createParticle(className) {
+  if (particles.length > maxParticles) return;
+  const p = document.createElement('div');
+  p.className = className;
+  p.style.left = Math.random()*window.innerWidth+'px';
+  p.style.top = Math.random()*window.innerHeight+'px';
+  p.style.width = p.style.height = Math.random()*4+2+'px';
+  document.body.appendChild(p);
+  particles.push(p);
+  setTimeout(()=>{p.remove(); particles.shift();},3000);
+}
+setInterval(()=>{createParticle('dust'); createParticle('star');},200);
+document.addEventListener('mousemove', e=>{createParticle('sparkle');});
+
+// Light beams
+const lightContainer = document.getElementById('lightBeams');
+for(let i=0;i<10;i++){const b=document.createElement('div');b.className='beam';b.style.left=Math.random()*window.innerWidth+'px';b.style.animationDuration=(5+Math.random()*10)+'s';lightContainer.appendChild(b);}
+
+// Typing animation
+async function typeText(el,text,speed=40){el.innerHTML='';for(let i=0;i<text.length;i++){const s=document.createElement('span');s.textContent=text[i];el.appendChild(s);await new Promise(r=>setTimeout(r,speed));}}
+
+// APIs
+async function fetchQuote(){try{const r=await fetch('https://api.quotable.io/random');const d=await r.json();return `"${d.content}" — ${d.author}`;}catch{return "The Oracle is silent...";}}
+async function fetchNumberFact(){try{const num=Math.floor(Math.random()*365)+1;const r=await fetch(`https://numbersapi.com/${num}/trivia`);return r.text();}catch{return "";}}
+async function fetchMysticalBook(){try{const r=await fetch('https://openlibrary.org/search.json?q=mysticism&limit=50');const d=await r.json();const doc=d.docs[Math.floor(Math.random()*d.docs.length)];return doc.title_suggest?`From ancient wisdom: ${doc.title_suggest}`:"";}catch{return "";}}
+async function changeBackground(){const k=['mystical','magic','cosmos','ancient','stars'];const r=k[Math.floor(Math.random()*k.length)];const img=new Image();img.src=`https://source.unsplash.com/1600x900/?${r}`;img.onload=()=>document.body.style.backgroundImage=`url(${img.src})`;}
+
+// Local history
+function saveQuestion(q){let h=JSON.parse(localStorage.getItem('oracleHistory')||'[]');h.unshift(q);localStorage.setItem('oracleHistory',JSON.stringify(h.slice(0,10)));renderHistory();}
+function renderHistory(){const hist=document.getElementById('histList');const h=JSON.parse(localStorage.getItem('oracleHistory')||'[]');hist.innerHTML=h.map(q=>`<li>${q}</li>`).join('');}
+
+// Oracle
+let currentLang='en';
+async function getOracleAnswer(q){document.getElementById('magicSound').play().catch(()=>{});let combined=`${await fetchQuote()}\n${await fetchNumberFact()}\n${await fetchMysticalBook()}`;if(currentLang!=='en'){combined=await translateText(combined,currentLang);}await typeText(document.getElementById('oracleText'),combined);changeBackground();}
+
+// Translation fallback
+async function translateText(t,lang){try{const r=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(t)}&langpair=en|${lang}`);const d=await r.json();return d.responseData.translatedText||t;}catch{return t;}}
+
+// Button
+document.getElementById('askBtn').addEventListener('click',()=>{const q=document.getElementById('question').value.trim();if(!q){alert("The Oracle needs a question!");return;}saveQuestion(q);getOracleAnswer(q);});
+
+// Language flags
+document.querySelectorAll('.flagBtn').forEach(f=>{f.addEventListener('click',()=>{currentLang=f.dataset.lang;document.querySelectorAll('[data-text]').forEach(el=>{const key=el.dataset.text;const map={'title':{'en':'🔮 Ultimate Mystical Oracle 🔮','es':'🔮 Oráculo Místico Supremo 🔮','fr':'🔮 Oracle Mystique Ultime 🔮','de':'🔮 Ultimatives Mystisches Orakel 🔮','hi':'🔮 अल्टीमेट रहस्यमय ओरेकल 🔮'},'placeholder':{'en':'Ask your question...','es':'Haz tu pregunta...','fr':'Pose ta question...','de':'Stelle deine Frage...','hi':'अपना प्रश्न पूछें...'},'button':{'en':'Ask the Oracle','es':'Preguntar al Oráculo','fr':'Demander à l\'Oracle','de':'Frage das Orakel','hi':'ओरेकल से पूछें'},'history':{'en':'Question History:','es':'Historial de Preguntas:','fr':'Historique des Questions:','de':'Fragenverlauf:','hi':'प्रश्न इतिहास:'}};el.textContent=map[key][currentLang]||map[key]['en'];});});});
+
+// Init
+changeBackground();renderHistory();
+</script>
+
+</body>
+</html>
